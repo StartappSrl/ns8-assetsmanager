@@ -1,0 +1,37 @@
+#
+# systemd/user/assetsmanager.service - Asset Manager MSP
+#
+# Adattata da imageroot/systemd/user/kickstart.service del template
+# ns8-kickstart: porta 5000 (non 8080), volumi per bootstrap_config.json
+# e le cartelle persistenti dell'app (snapshot, allegati, ecc.) - niente
+# smarthost/discover-smarthost, non ci serve.
+#
+[Unit]
+Description=Asset Manager MSP server
+
+[Service]
+Environment=PODMAN_SYSTEMD_UNIT=%n
+EnvironmentFile=%E/state/environment
+WorkingDirectory=%E/state
+Restart=always
+ExecStartPre=/bin/rm -f %t/assetsmanager.pid %t/assetsmanager.ctr-id
+ExecStart=/usr/bin/podman run \
+    --detach \
+    --conmon-pidfile=%t/assetsmanager.pid \
+    --cidfile=%t/assetsmanager.ctr-id \
+    --cgroups=no-conmon \
+    --replace --name=%N \
+    --publish=127.0.0.1:${TCP_PORT}:5000 \
+    --volume=%E/state/bootstrap_config.json:/app/bootstrap_config.json:Z \
+    --volume=%E/state/snapshots:/app/snapshots:Z \
+    --volume=%E/state/ticket_attachments:/app/ticket_attachments:Z \
+    --volume=%E/state/passbolt_keys:/app/passbolt_keys:Z \
+    --volume=%E/state/company_assets:/app/company_assets:Z \
+    ${ASSETSMANAGER_IMAGE}
+ExecStop=/usr/bin/podman stop --ignore --cidfile %t/assetsmanager.ctr-id -t 10
+ExecStopPost=/usr/bin/podman rm --ignore -f --cidfile %t/assetsmanager.ctr-id
+PIDFile=%t/assetsmanager.pid
+Type=forking
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,12 @@
+#!/bin/bash
+
+#
+# configure-module/80start_services - Asset Manager MSP
+#
+# Se si arriva a questo punto, la configurazione è andata a buon fine:
+# creo le cartelle usate come volumi (Podman le creerebbe comunque da
+# solo, ma meglio essere espliciti) e abilito/avvio il servizio.
+
+mkdir -p snapshots ticket_attachments passbolt_keys company_assets
+
+systemctl --user enable --now assetsmanager.service

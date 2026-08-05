@@ -1,0 +1,62 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "configure-module input",
+    "$id": "http://schema.nethserver.org/assetsmanager/configure-module-input.json",
+    "description": "Configure Asset Manager MSP",
+    "examples": [
+        {
+            "fqdn": "assetsmanager.tuodominio.it",
+            "lets_encrypt": true,
+            "db_host": "127.0.0.1",
+            "db_port": 20000,
+            "db_name": "AssetManagement",
+            "db_user": "assetsmanager",
+            "db_password": "una-password-sicura",
+            "encryption_key": "generata-con-Fernet.generate_key()",
+            "flask_secret_key": "generata-con-secrets.token_hex(32)"
+        }
+    ],
+    "type": "object",
+    "required": ["fqdn", "db_host", "db_port", "db_name", "db_user", "db_password", "encryption_key", "flask_secret_key"],
+    "properties": {
+        "fqdn": {
+            "type": "string",
+            "title": "Nome di dominio",
+            "description": "Il sottodominio dedicato a questa app (es. assetsmanager.tuodominio.it) - deve già puntare a questo server via DNS."
+        },
+        "lets_encrypt": {
+            "type": "boolean",
+            "title": "Certificato Let's Encrypt",
+            "description": "Richiede un certificato TLS valido per il dominio sopra.",
+            "default": true
+        },
+        "db_host": {
+            "type": "string",
+            "title": "Host database MariaDB"
+        },
+        "db_port": {
+            "type": "integer",
+            "title": "Porta database MariaDB"
+        },
+        "db_name": {
+            "type": "string",
+            "title": "Nome database"
+        },
+        "db_user": {
+            "type": "string",
+            "title": "Utente database"
+        },
+        "db_password": {
+            "type": "string",
+            "title": "Password database"
+        },
+        "encryption_key": {
+            "type": "string",
+            "title": "Chiave di cifratura (formato Fernet)"
+        },
+        "flask_secret_key": {
+            "type": "string",
+            "title": "Chiave segreta Flask (sessioni)"
+        }
+    }
+}

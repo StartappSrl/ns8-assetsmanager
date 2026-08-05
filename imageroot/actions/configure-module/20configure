@@ -1,0 +1,70 @@
+#!/usr/bin/env python3
+
+#
+# configure-module/20configure - Asset Manager MSP
+#
+# Scrive bootstrap_config.json (letto da settings.py all'avvio dell'app)
+# e registra la rotta su Traefik per un SOTTODOMINIO DEDICATO (non un
+# sottopercorso) - l'app ha centinaia di link interni che assumono di
+# essere alla radice del dominio, un sottodominio evita di doverli
+# modificare tutti.
+
+import json
+import sys
+import os
+import agent
+import agent.tasks
+
+request = json.load(sys.stdin)
+
+# --- 1. Scrivo bootstrap_config.json nella directory di stato del
+# modulo (WorkingDirectory nell'unità systemd) - il container lo monta
+# da lì come volume, vedi assetsmanager.service.
+bootstrap_config = {
+    "sql_server": {
+        "server": request["db_host"],
+        "port": request["db_port"],
+        "database": request["db_name"],
+        "username": request["db_user"],
+        "password": request["db_password"],
+    },
+    "encryption_key": request["encryption_key"],
+    "flask_secret_key": request["flask_secret_key"],
+}
+
+state_dir = os.environ["AGENT_STATE_DIR"]
+bootstrap_path = os.path.join(state_dir, "bootstrap_config.json")
+# File con dati sensibili (password in chiaro) - permessi restrittivi
+with open(bootstrap_path, "w", encoding="utf-8") as f:
+    os.chmod(bootstrap_path, 0o600)
+    json.dump(bootstrap_config, f, indent=2)
+
+# --- 2. Salvo i parametri NON sensibili come variabili d'ambiente del
+# modulo (per get-configuration e per uso futuro) - MAI le password/
+# chiavi, quelle restano solo dentro bootstrap_config.json.
+agent.mset_env({
+    "FQDN": request["fqdn"],
+    "LETS_ENCRYPT": "true" if request.get("lets_encrypt", True) else "false",
+    "DB_HOST": request["db_host"],
+    "DB_PORT": str(request["db_port"]),
+    "DB_NAME": request["db_name"],
+    "DB_USER": request["db_user"],
+})
+
+# --- 3. Registro la rotta su Traefik - sottodominio dedicato (host),
+# NESSUN path (root) - così l'app riceve le richieste esattamente come
+# se possedesse tutto il dominio, nessun link interno da adattare.
+response = agent.tasks.run(
+    agent_id=agent.resolve_agent_id('traefik@node'),
+    action='set-route',
+    data={
+        'instance': os.environ['MODULE_ID'],
+        'url': 'http://127.0.0.1:' + os.environ["TCP_PORT"],
+        'host': request["fqdn"],
+        'path': None,
+        'http2https': True,
+        'lets_encrypt': request.get("lets_encrypt", True),
+    },
+)
+
+agent.assert_exp(response['exit_code'] == 0)

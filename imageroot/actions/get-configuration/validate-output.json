@@ -1,0 +1,25 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "get-configuration output",
+    "$id": "http://schema.nethserver.org/assetsmanager/get-configuration-output.json",
+    "description": "Get Asset Manager MSP configuration (nessun dato sensibile)",
+    "examples": [
+        {
+            "fqdn": "assetsmanager.tuodominio.it",
+            "lets_encrypt": true,
+            "db_host": "127.0.0.1",
+            "db_port": 20000,
+            "db_name": "AssetManagement",
+            "db_user": "assetsmanager"
+        }
+    ],
+    "type": "object",
+    "properties": {
+        "fqdn": {"type": "string"},
+        "lets_encrypt": {"type": "boolean"},
+        "db_host": {"type": "string"},
+        "db_port": {"type": "integer"},
+        "db_name": {"type": "string"},
+        "db_user": {"type": "string"}
+    }
+}
